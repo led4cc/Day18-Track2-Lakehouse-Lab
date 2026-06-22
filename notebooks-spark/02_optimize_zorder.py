@@ -44,6 +44,11 @@ for batch in range(200):
     mode = "overwrite" if batch == 0 else "append"
     df.write.format("delta").mode(mode).save(path)
 
+# Evidence for the small-file problem before compaction.
+before_files = spark.sql(f"DESCRIBE DETAIL delta.`{path}`").select("numFiles").first()[0]
+print(f"Files before OPTIMIZE: {before_files}")
+assert before_files >= 100, "Expected at least 100 small files before OPTIMIZE"
+
 # %% [markdown]
 # ## 2. Benchmark BEFORE optimize
 

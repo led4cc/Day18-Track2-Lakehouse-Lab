@@ -51,10 +51,10 @@ spark-up: ## [spark] Start MinIO + Spark/Jupyter (Docker — first run pulls ~2 
 	@echo "  MinIO   → http://localhost:9001 (minioadmin / minioadmin)"
 
 spark-smoke: ## [spark] Smoke test inside Spark container
-	$(COMPOSE) exec -T spark python /workspace/scripts/verify.py
+	$(COMPOSE) exec -T --user 1000:100 spark bash -lc 'export SPARK_HOME=/usr/local/spark; source /usr/local/bin/before-notebook.d/10spark-config.sh; python /workspace/scripts/verify.py'
 
 spark-data: ## [spark] Generate 1M-row Bronze (Spark version)
-	$(COMPOSE) exec -T spark python /workspace/scripts/generate_data.py
+	$(COMPOSE) exec -T --user 1000:100 spark bash -lc 'export SPARK_HOME=/usr/local/spark; source /usr/local/bin/before-notebook.d/10spark-config.sh; python /workspace/scripts/generate_data.py'
 
 spark-down: ## [spark] Stop Docker stack (data persists)
 	$(COMPOSE) down

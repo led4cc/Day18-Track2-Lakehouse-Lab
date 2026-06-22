@@ -56,11 +56,28 @@ make spark-clean   Spark/Docker: full reset
 ## Quick Start — Spark/Docker (optional)
 
 ```bash
-make spark-up && make spark-smoke
+make spark-up
+make spark-smoke
 ```
 
-Yêu cầu: Docker Desktop ≥ 4.x, RAM ≥ 8 GB free.
-Endpoints + troubleshooting cho path này: xem [`notebooks-spark/README.md`](notebooks-spark/) (notebooks dùng PySpark API).
+On Windows PowerShell, if GNU Make is not installed, use the equivalent native
+launcher instead:
+
+```powershell
+.\scripts\spark.ps1 up
+.\scripts\spark.ps1 smoke
+```
+
+Yêu cầu: Docker Desktop ≥ 4.x, RAM ≥ 8 GB free. Sau khi smoke test pass:
+
+1. Mở [Jupyter Lab](http://localhost:8888/lab) và nhập token `lakehouse`.
+2. Chạy lần lượt `01_delta_basics` → `02_optimize_zorder` → `03_time_travel`.
+3. Chạy `make spark-data` để tạo 1M Bronze rows, rồi chạy `04_medallion`.
+4. Mở [MinIO Console](http://localhost:9001) (user/password: `minioadmin` / `minioadmin`) để kiểm tra buckets và `_delta_log/`.
+
+Jupyter trong Docker phục vụ trực tiếp thư mục `notebooks-spark/`; các notebook PySpark
+được tự đồng bộ từ Jupytext `.py` sang `.ipynb` lúc container khởi động. Hướng dẫn chi tiết
+và troubleshooting: [`notebooks-spark/README.md`](notebooks-spark/README.md).
 
 ---
 

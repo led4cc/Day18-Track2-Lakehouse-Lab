@@ -33,11 +33,30 @@ services:
         done
         echo "Buckets ready: lakehouse, bronze, silver, gold"
 
+  spark-init:
+    image: quay.io/jupyter/pyspark-notebook:spark-3.5.0
+    container_name: lakehouse-spark-init
+    user: root
+    entrypoint:
+      - sh
+      - -c
+      - |
+        mkdir -p /home/jovyan/.ivy2 /home/jovyan/.cache
+        chown -R 1000:100 /home/jovyan/.ivy2 /home/jovyan/.cache
+    volumes:
+      - ivy-cache:/home/jovyan/.ivy2
+      - ipython-cache:/home/jovyan/.cache
+
   spark:
     image: quay.io/jupyter/pyspark-notebook:spark-3.5.0
     container_name: lakehouse-spark
+    # Let start.sh make the mounted cache volumes writable for jovyan before it
+    # drops privileges to run Jupyter.
+    user: root
     depends_on:
       minio-init:
+        condition: service_completed_successfully
+      spark-init:
         condition: service_completed_successfully
     ports:
       - "8888:8888"
@@ -64,16 +83,15 @@ services:
           delta-spark==3.2.0 \
           jupytext==1.16.4 \
           faker==30.3.0
-        echo ">> Auto-converting .py percent files to .ipynb (one-time per file)…"
-        cd /workspace/notebooks && for f in *.py; do
-          ipynb="${f%.py}.ipynb"
-          [ -f "$ipynb" ] || jupytext --to notebook "$f"
+        echo ">> Syncing Spark notebooks (.py -> .ipynb)…"
+        cd /workspace/notebooks-spark && for f in *.py; do
+          python -m jupytext --to notebook --update "$$f" 2>/dev/null || python -m jupytext --to notebook "$$f"
         done
         echo ">> Starting Jupyter (token: lakehouse)…"
-        cd /workspace
+        cd /workspace/notebooks-spark
         start-notebook.py \
           --IdentityProvider.token=lakehouse \
-          --ServerApp.root_dir=/workspace
+          --ServerApp.root_dir=/workspace/notebooks-spark
 
 volumes:
   minio-data:
